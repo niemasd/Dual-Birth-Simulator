@@ -16,65 +16,55 @@ using namespace std;
 
 // definitions
 #define DEFAULT_R 1
-#define USAGE "USAGE: ./dualbirth lambda_A lambda_B [-n end_taxa] [-t end_time] [-r num_replicates]"
-#define BAD_RATE "ERROR: Rates must be positive"
+#define USAGE "USAGE: ./yule lambda [-n end_taxa] [-t end_time] [-r num_replicates]"
+#define BAD_RATE "ERROR: Rate must be positive"
 #define BAD_N "ERROR: End number of taxa must be positive"
 #define BAD_T "ERROR: End time must be positive"
 #define BAD_R "ERROR: Number of replicates must be positive"
 #define BAD_END "ERROR: Must specify either end_taxa or end_time (or both)"
 
-// Dual-Birth simulator
-void dualbirth( double LA, double LB, int N, DECIMAL T ) {
+// Yule simulator
+void yule( double L, int N, DECIMAL T ) {
     // global variables
     DECIMAL t = 0;        // current global time
     vector<int> left;     // left[i] is the left child of node i
     vector<int> right;    // right[i] is the right child of node i
     vector<int> parent;   // parent[i] is the parent of node i
     vector<DECIMAL> time; // time[i] is the time of node i
-    set active;           // set containing all active nodes
-    set inactive;         // set containing all inactive nodes
+    set leaves;           // set containing all leaves
 
     // prepare for simulations
     left.push_back(-1);   // root (i = 0) has no left child yet
     right.push_back(-1);  // root (i = 0) has no right child yet
     parent.push_back(-1); // root (i = 0) has no parent
     time.push_back(0);    // root (i = 0) starts with a time of 0
-    active.add(0);
+    leaves.add(0);
 
     // perform simulations
-    while(active.size() + inactive.size() < N) {
+    while(leaves.size() < N) {
         // sample delta time until next splitting event
-        exponential_distribution<double> exp_rv(active.size()*LB + inactive.size()*LA);
+        exponential_distribution<double> exp_rv(leaves.size()*L);
         t += exp_rv(GEN); // sample next splitting time
         if(t >= T) {
             break;
         }
 
         // choose the next branch to split
-        double p = (active.size()*LB) / (active.size()*LB + inactive.size()*LA); // probability splitting branch is active
-        bernoulli_distribution coin(p);
-        int next = -1;
-        if(coin(GEN)) {
-            next = active.random();
-            active.remove(next);
-        }
-        else {
-            next = inactive.random();
-            inactive.remove(next);
-        }
+        int next = leaves.random();
+        leaves.remove(next);
         time[next] = t;
 
         // perform splitting
         int new_left = time.size();
         left[next] = new_left;
-        inactive.add(new_left);
+        leaves.add(new_left);
         parent.push_back(next);
         left.push_back(-1);
         right.push_back(-1);
         time.push_back(t);
         int new_right = time.size();
         right[next] = new_right;
-        active.add(new_right);
+        leaves.add(new_right);
         parent.push_back(next);
         left.push_back(-1);
         right.push_back(-1);
@@ -82,20 +72,15 @@ void dualbirth( double LA, double LB, int N, DECIMAL T ) {
     }
 
     // if reached n leaves, sample one more time to end at time JUST BEFORE n+1 leaves
-    if(active.size() + inactive.size() == N) {
-        exponential_distribution<double> exp_rv(active.size()*LB + inactive.size()*LA);
+    if(leaves.size() == N) {
+        exponential_distribution<double> exp_rv(leaves.size()*L);
         t += exp_rv(GEN); // sample next splitting time
     }
 
     // update all leaves to be proper time
-    while(active.size() != 0) {
-        int leaf = active.random();
-        active.remove(leaf);
-        time[leaf] = t;
-    }
-    while(inactive.size() != 0) {
-        int leaf = inactive.random();
-        inactive.remove(leaf);
+    while(leaves.size() != 0) {
+        int leaf = leaves.random();
+        leaves.remove(leaf);
         time[leaf] = t;
     }
 
@@ -105,7 +90,7 @@ void dualbirth( double LA, double LB, int N, DECIMAL T ) {
 
 // main function
 int main( int argc, char* argv[] ) {
-    if(argc != 5 && argc != 7 && argc != 9) {
+    if(argc != 4 && argc != 6 && argc != 8) {
         cout << USAGE << endl; exit(1);
     }
     bool END = false;
@@ -114,30 +99,29 @@ int main( int argc, char* argv[] ) {
     long    R = DEFAULT_R;                      // number of replicates
 
     // parse rates
-    double LA = strtod(argv[1],NULL); // activation rate
-    double LB = strtod(argv[2],NULL); // birth rate
+    double L = strtod(argv[1],NULL); // Yule rate
 
     // parse first argument
-    if(strcmp(argv[3],"-n") == 0) {
-        N = strtol(argv[4],NULL,10); END = true;
+    if(strcmp(argv[2],"-n") == 0) {
+        N = strtol(argv[3],NULL,10); END = true;
     }
-    else if(strcmp(argv[3],"-t") == 0) {
-        T = strtold(argv[4],NULL); END = true;
+    else if(strcmp(argv[2],"-t") == 0) {
+        T = strtold(argv[3],NULL); END = true;
     }
-    else if(strcmp(argv[3],"-r") == 0) {
-        R = strtol(argv[4],NULL,10);
+    else if(strcmp(argv[2],"-r") == 0) {
+        R = strtol(argv[3],NULL,10);
     }
 
     // parse second argument
-    if(argc > 5) {
-        if(strcmp(argv[5],"-n") == 0) {
-            N = strtol(argv[6],NULL,10); END = true;
+    if(argc > 4) {
+        if(strcmp(argv[4],"-n") == 0) {
+            N = strtol(argv[5],NULL,10); END = true;
         }
-        else if(strcmp(argv[5],"-t") == 0) {
-            T = strtold(argv[6],NULL); END = true;
+        else if(strcmp(argv[4],"-t") == 0) {
+            T = strtold(argv[5],NULL); END = true;
         }
-        else if(strcmp(argv[5],"-r") == 0) {
-            R = strtol(argv[6],NULL,10);
+        else if(strcmp(argv[4],"-r") == 0) {
+            R = strtol(argv[5],NULL,10);
         }
         else {
             cerr << USAGE << endl; exit(1);
@@ -145,15 +129,15 @@ int main( int argc, char* argv[] ) {
     }
 
     // parse third argument
-    if(argc > 7) {
-        if(strcmp(argv[7],"-n") == 0) {
-            N = strtol(argv[8],NULL,10); END = true;
+    if(argc > 6) {
+        if(strcmp(argv[6],"-n") == 0) {
+            N = strtol(argv[7],NULL,10); END = true;
         }
-        else if(strcmp(argv[7],"-t") == 0) {
-            T = strtold(argv[8],NULL); END = true;
+        else if(strcmp(argv[6],"-t") == 0) {
+            T = strtold(argv[7],NULL); END = true;
         }
-        else if(strcmp(argv[7],"-r") == 0) {
-            R = strtol(argv[8],NULL,10);
+        else if(strcmp(argv[6],"-r") == 0) {
+            R = strtol(argv[7],NULL,10);
         }
         else {
             cerr << USAGE << endl; exit(1);
@@ -161,7 +145,7 @@ int main( int argc, char* argv[] ) {
     }
 
     // check arguments
-    if(LA <= 0 || LB <= 0) {
+    if(L <= 0) {
         cerr << BAD_RATE << endl << USAGE << endl; exit(1);
     }
     if(N <= 0) {
@@ -179,6 +163,6 @@ int main( int argc, char* argv[] ) {
 
     // simulate trees
     for(long i = 0; i < R; ++i) {
-        dualbirth(LA,LB,N,T);
+        yule(L,N,T);
     }
 }
