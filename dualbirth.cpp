@@ -6,6 +6,8 @@
  */
 
 // include statements
+#include "helper.hpp"
+#include "set.hpp"
 #include <iostream>
 #include <random>
 #include <unordered_map>
@@ -13,7 +15,6 @@
 using namespace std;
 
 // definitions
-using DECIMAL = long double;
 #define DEFAULT_R 1
 #define USAGE "USAGE: ./dualbirth lambda_A lambda_B [-n end_taxa] [-t end_time] [-r num_replicates]"
 #define BAD_RATE "ERROR: Rates must be positive"
@@ -21,86 +22,6 @@ using DECIMAL = long double;
 #define BAD_T "ERROR: End time must be positive"
 #define BAD_R "ERROR: Number of replicates must be positive"
 #define BAD_END "ERROR: Must specify either end_taxa or end_time (or both)"
-random_device RDEV;
-default_random_engine GEN(RDEV());
-
-// set class with O(1) insert, remove, find, and randomly select
-class set {
-private:
-    vector<int> arr;
-    unordered_map<int,int> map;
-public:
-    // get size of set
-    int size() {
-        return arr.size();
-    }
-
-    // add integer x to set
-    void add( const int & x ) {
-        if(map.find(x) != map.end()) {
-            return;
-        }
-        int index = arr.size();
-        arr.push_back(x);
-        map.insert(pair<int,int>(x,index));
-    }
-
-    // see if integer x exists in set
-    bool find( const int & x ) {
-        return map.find(x) != map.end();
-    }
-
-    // remove integer x from set
-    void remove( const int & x ) {
-        if(map.find(x) == map.end()) {
-            return;
-        }
-        int index = map.at(x);
-        map.erase(x);
-        int last_index = arr.size()-1;
-        int last = arr[last_index]; arr[last_index] = x; arr[index] = last;
-        arr.pop_back();
-        if(map.find(last) != map.end()) {
-            map.at(last) = index;
-        }
-    }
-
-    // return a random integer from set
-    int random() {
-        if(arr.size() == 0) {
-            cerr << "ERROR: Calling random() on an empty set" << endl; exit(1);
-        }
-        uniform_int_distribution<int> dist(0,arr.size()-1);
-        int index = dist(GEN);
-        return arr[index];
-    }
-};
-
-// output Newick tree
-void newick( const int & x, const vector<int> & left, const vector<int> & right, const vector<int> & parent, const vector<DECIMAL> & time ) {
-    // if leaf
-    if(left[x] == -1 && right[x] == -1) {
-        cout << 'L' << x;
-    }
-
-    // if internal node
-    else {
-        int x_left = left[x]; int x_right = right[x]; DECIMAL x_time = time[x];
-        DECIMAL left_length = time[x_left] - x_time;
-        DECIMAL right_length = time[x_right] - x_time;
-        cout << '(';
-        newick(x_left,left,right,parent,time);
-        cout << ':' << left_length << ',';
-        newick(x_right,left,right,parent,time);
-        cout << ':' << right_length << ')';
-        cout << 'I' << x;
-    }
-
-    // add semicolon if root
-    if(parent[x] == -1) {
-        cout << ';' << endl;
-    }
-}
 
 // Dual-Birth simulator
 void dualbirth( double LA, double LB, int N, DECIMAL T ) {
