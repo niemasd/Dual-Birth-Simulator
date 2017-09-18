@@ -87,6 +87,11 @@ void dualbirth( double LA, double LB, int N, DECIMAL T ) {
         t += exp_rv(GEN); // sample next splitting time
     }
 
+    // check for end time
+    if(T < t) {
+        t = T;
+    }
+
     // update all leaves to be proper time
     while(active.size() != 0) {
         int leaf = active.random();
