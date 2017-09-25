@@ -8,6 +8,7 @@
 // include statements
 #include "helper.hpp"
 #include "set.hpp"
+#include <cstring>
 #include <iostream>
 #include <random>
 #include <unordered_map>
