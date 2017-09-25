@@ -2,6 +2,9 @@
 dualbirth
 yule
 
+# Mac OS X Stuff
+.DS_Store
+
 # Prerequisites
 *.d
 
