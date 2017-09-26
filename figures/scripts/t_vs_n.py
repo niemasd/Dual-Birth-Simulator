@@ -18,7 +18,7 @@ import seaborn as sns
 # settings
 sns.set_style("ticks")
 rcParams['font.family'] = 'serif'
-pal = {'old_r_neg_4':'#FF0000', 'new_r_neg_4':'#0000FF', 'old_r0':'#FF00FF', 'new_r0':'#00FF00'}
+pal = {'old_r_neg_4':'#FF9999', 'new_r_neg_4':'#FF0000', 'old_r0':'#9999FF', 'new_r0':'#0000FF'}
 handles = [Patch(color=pal['old_r_neg_4'],label=r'Original $\left( r=10^{-4} \right)$'), Patch(color=pal['new_r_neg_4'],label=r'New $\left( r=10^{-4} \right)$'), Patch(color=pal['old_r0'],label=r'Original $\left( r=1 \right)$'), Patch(color=pal['new_r0'],label=r'New $\left( r=1 \right)$'),]
 def avg(x):
     return float(sum(x))/len(x)
