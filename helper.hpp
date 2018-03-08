@@ -29,8 +29,9 @@ void newick( const int & x, const vector<int> & left, const vector<int> & right,
         cout << 'I' << x;
     }
 
-    // add semicolon if root
+    // add semicolon and root edge if root
     if(parent[x] == -1) {
+        cout << ':' << time[x];
         cout << ';' << endl;
     }
 }
