@@ -17,11 +17,12 @@ using namespace std;
 
 // definitions
 #define DEFAULT_R 1
-#define USAGE "USAGE: ./dualbirth lambda_A lambda_B [-n end_taxa] [-t end_time] [-r num_replicates]"
+#define USAGE "USAGE: ./dualbirth lambda_A lambda_B [-n end_taxa] [-t end_time] [-r num_replicates] [-s random_seed]"
 #define BAD_RATE "ERROR: Rates must be positive"
 #define BAD_N "ERROR: End number of taxa must be positive"
 #define BAD_T "ERROR: End time must be positive"
 #define BAD_R "ERROR: Number of replicates must be positive"
+#define BAD_S "ERROR: Random number seed must be >= 0"
 #define BAD_END "ERROR: Must specify either end_taxa or end_time (or both)"
 
 // Dual-Birth simulator
@@ -118,6 +119,7 @@ int main( int argc, char* argv[] ) {
     int     N = numeric_limits<int>::max();     // end number of leaves
     DECIMAL T = numeric_limits<DECIMAL>::max(); // end time
     long    R = DEFAULT_R;                      // number of replicates
+    int     S = -1; bool USER_S = false;        // random number seed
 
     // parse rates
     double LA = strtod(argv[1],NULL); // activation rate
@@ -133,6 +135,9 @@ int main( int argc, char* argv[] ) {
     else if(strcmp(argv[3],"-r") == 0) {
         R = strtol(argv[4],NULL,10);
     }
+    else if(strcmp(argv[3],"-s") == 0) {
+        S = strtol(argv[4],NULL,10); USER_S = true;
+    }
 
     // parse second argument
     if(argc > 5) {
@@ -144,6 +149,9 @@ int main( int argc, char* argv[] ) {
         }
         else if(strcmp(argv[5],"-r") == 0) {
             R = strtol(argv[6],NULL,10);
+        }
+        else if(strcmp(argv[5],"-s") == 0) {
+            S = strtol(argv[6],NULL,10); USER_S = true;
         }
         else {
             cerr << USAGE << endl; exit(1);
@@ -160,6 +168,28 @@ int main( int argc, char* argv[] ) {
         }
         else if(strcmp(argv[7],"-r") == 0) {
             R = strtol(argv[8],NULL,10);
+        }
+        else if(strcmp(argv[7],"-s") == 0) {
+            S = strtol(argv[8],NULL,10); USER_S = true;
+        }
+        else {
+            cerr << USAGE << endl; exit(1);
+        }
+    }
+
+    // parse third argument
+    if(argc > 9) {
+        if(strcmp(argv[9],"-n") == 0) {
+            N = strtol(argv[10],NULL,10); END = true;
+        }
+        else if(strcmp(argv[9],"-t") == 0) {
+            T = strtold(argv[10],NULL); END = true;
+        }
+        else if(strcmp(argv[9],"-r") == 0) {
+            R = strtol(argv[10],NULL,10);
+        }
+        else if(strcmp(argv[9],"-s") == 0) {
+            S = strtol(argv[10],NULL,10); USER_S = true;
         }
         else {
             cerr << USAGE << endl; exit(1);
@@ -179,6 +209,16 @@ int main( int argc, char* argv[] ) {
     if(R <= 0) {
         cerr << BAD_R << endl << USAGE << endl; exit(1);
     }
+    if(S < 0) {
+        if(USER_S) {
+            cerr << BAD_N << endl << USAGE << endl; exit(1);
+        }
+        else {
+            uniform_int_distribution<> randint(0,numeric_limits<int>::max());
+            S = randint(GEN);
+        }
+    }
+    GEN.seed(S);
     if(!END) {
         cerr << BAD_END << endl << USAGE << endl; exit(1);
     }
